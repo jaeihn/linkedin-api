@@ -988,6 +988,62 @@ class Linkedin(object):
 
         return res.status_code == 200
 
+    def withdraw_sent_invitation(self, invitationUrn):
+        """
+        Withdraw a connect request sent
+        :param invitationUrn: InvitationUrn Example: 6775007461846982656
+        :type invitation_entity_urn: str
+
+        :return: Error state. True if error occurred
+        :rtype: boolean
+        """
+        payload = json.dumps(
+            {
+                "inviteActionType":"ACTOR_WITHDRAW",
+                "inviteActionData":[
+                    {
+                        "entityUrn":f"urn:li:fs_relInvitation:{invitationUrn}",
+                        "genericInvitation": False,
+                        "genericInvitationType":"CONNECTION"
+                    }
+                ]
+            }
+        )
+        res = self._post(
+            f"/relationships/invitations?action=closeInvitations",
+            headers={"accept": "application/vnd.linkedin.normalized+json+2.1"},
+            data = payload
+        )
+        return res.status_code != 200
+
+    def get_pending_sent_invitation_count(self):
+        """
+        :return: count of pending send invitations
+        :rtype: int
+        """
+        res = self._fetch(
+            f"/relationships/invitationsSummaryV2?types=List(SENT_INVITATION_COUNT)"
+        )
+        data = res.json()
+        return data["numTotalSentInvitations"]
+
+    def get_pending_sent_invitations(self,start,count):
+        """
+        Returns URIs of all 'count' number of invitations from 'start'+1th entry
+        Eg: If start = 0, gets most recently sent 'count' number of invitations
+        """
+        res = self._fetch(f"/relationships/sentInvitationViewsV2?count={count}&invitationType=CONNECTION&q=invitationType&start={start}")
+        data = res.json()["elements"]
+        pending_invitation_uris = [p["entityUrn"].split(":")[-1] for p in data]
+        ## Each of these URIs can be passed to withdraw_sent_invitation to withdraw request
+        return pending_invitation_uris
+
+    def withdraw_last_fifty_invitations(self):
+        total = self.get_pending_sent_invitation_count()
+        ppl = self.get_pending_sent_invitations(total-50,100)
+        for p in ppl:
+            self.withdraw_sent_invitation(p)
+
     def generateTrackingId(self):
         """Generates and returns a random trackingId
 
