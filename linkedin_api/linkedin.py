@@ -1170,7 +1170,7 @@ class Linkedin(object):
         """Withdraw connection invitation
 
         :param invitation_entity_urn: URN ID of the invitation
-        :type invitation_entity_urn: int
+        :type invitation_entity_urn: str
         :param invitation_shared_secret: Shared secret of invitation
         :type invitation_shared_secret: str
 
@@ -1183,11 +1183,49 @@ class Linkedin(object):
             {
                 "invitationId": invitation_id,
                 "inviterActionType": "WITHDRAW",
-              #   "inviteActionData": [
-              #   {
-              #     "invitationId": invitation_id
-              #   }
-              # ],
+              "inviteActionData": [
+                {
+                  "invitationId": "urn:li:invitation:6148971681877606400"
+                }
+              ],
+                "invitationSharedSecret": invitation_shared_secret,
+                "isGenericInvitation": False,
+            }
+        )
+
+        res = self._post(
+            f"{self.client.API_BASE_URL}/relationships/invitations/{invitation_id}",
+            params=params,
+            data=payload,
+        )
+        print(res.text)
+        return res.status_code == 200
+
+
+    def withdraw_invitation_lower(
+        self, invitation_entity_urn, invitation_shared_secret, 
+    ):
+        """Withdraw connection invitation
+
+        :param invitation_entity_urn: URN ID of the invitation
+        :type invitation_entity_urn: str
+        :param invitation_shared_secret: Shared secret of invitation
+        :type invitation_shared_secret: str
+
+        :return: Success state. True if successful
+        :rtype: boolean
+        """
+        invitation_id = get_id_from_urn(invitation_entity_urn)
+        params = {"action": "withdraw"}
+        payload = json.dumps(
+            {
+                "invitationId": invitation_id,
+                "inviterActionType": "WITHDRAW",
+                  "inviteActionData": [
+                    {
+                      "invitationId": "urn:li:invitation:6148971681877606400"
+                    }
+                  ],
                 "invitationSharedSecret": invitation_shared_secret,
                 "isGenericInvitation": False,
             }
