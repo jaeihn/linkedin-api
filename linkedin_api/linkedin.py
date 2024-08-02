@@ -1198,7 +1198,7 @@ class Linkedin(object):
             params=params,
             data=payload,
         )
-
+        print(res.text)
         return res.status_code == 200
 
     def add_connection(self, profile_public_id, message="", profile_urn=None):
@@ -1246,6 +1246,7 @@ class Linkedin(object):
             headers={"accept": "application/vnd.linkedin.normalized+json+2.1"},
         )
 
+        print(res.text)
         return res.status_code != 201
 
     def remove_connection(self, public_profile_id):
