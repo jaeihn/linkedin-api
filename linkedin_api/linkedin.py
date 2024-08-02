@@ -1150,6 +1150,45 @@ class Linkedin(object):
         payload = json.dumps(
             {
                 "invitationId": invitation_id,
+                "invitation
+                "invitationSharedSecret": invitation_shared_secret,
+                "isGenericInvitation": False,
+            }
+        )
+
+        res = self._post(
+            f"{self.client.API_BASE_URL}/relationships/invitations/{invitation_id}",
+            params=params,
+            data=payload,
+        )
+
+        return res.status_code == 200
+
+
+    def withdraw_invitation(
+        self, invitation_entity_urn, invitation_shared_secret, 
+    ):
+        """Withdraw connection invitation
+
+        :param invitation_entity_urn: URN ID of the invitation
+        :type invitation_entity_urn: int
+        :param invitation_shared_secret: Shared secret of invitation
+        :type invitation_shared_secret: str
+
+        :return: Success state. True if successful
+        :rtype: boolean
+        """
+        invitation_id = get_id_from_urn(invitation_entity_urn)
+        params = {"action": "inviterClosingInvitation"}
+        payload = json.dumps(
+            {
+                "invitationId": invitation_id,
+                "inviterActionType": "WITHDRAW",
+              #   "inviteActionData": [
+              #   {
+              #     "invitationId": invitation_id
+              #   }
+              # ],
                 "invitationSharedSecret": invitation_shared_secret,
                 "isGenericInvitation": False,
             }
