@@ -1,25 +1,19 @@
 """
 Provides linkedin api-related code
 """
-import base64
+
 import json
 import logging
 import random
 import uuid
 from operator import itemgetter
 from time import sleep, time
-from urllib.parse import quote, urlencode
+from urllib.parse import urlencode
 
 from linkedin_api.client import Client
 from linkedin_api.utils.helpers import (
-    append_update_post_field_to_posts_list,
     get_id_from_urn,
     get_list_posts_sorted_without_promoted,
-    get_update_author_name,
-    get_update_author_profile,
-    get_update_content,
-    get_update_old,
-    get_update_url,
     parse_list_raw_posts,
     parse_list_raw_urns,
     generate_trackingId,
@@ -126,7 +120,7 @@ class Linkedin(object):
                 "fs_miniProfile", "fsd_profile"
             )
         url_params["profileUrn"] = profile_urn
-        url = f"/identity/profileUpdatesV2"
+        url = "/identity/profileUpdatesV2"
         res = self._fetch(url, params=url_params)
         data = res.json()
         if data and "status" in data and data["status"] != 200:
@@ -161,7 +155,7 @@ class Linkedin(object):
             "q": "comments",
             "sortOrder": "RELEVANCE",
         }
-        url = f"/feed/comments"
+        url = "/feed/comments"
         url_params["updateId"] = "activity:" + post_urn
         res = self._fetch(url, params=url_params)
         data = res.json()
@@ -743,10 +737,10 @@ class Linkedin(object):
         :return: List of company update objects
         :rtype: list
         """
-        
+
         if results is None:
             results = []
-        
+
         params = {
             "companyUniversalName": {public_id or urn_id},
             "q": "companyFeedByUniversalName",
@@ -755,7 +749,7 @@ class Linkedin(object):
             "start": len(results),
         }
 
-        res = self._fetch(f"/feed/updates", params=params)
+        res = self._fetch("/feed/updates", params=params)
 
         data = res.json()
 
@@ -792,10 +786,10 @@ class Linkedin(object):
         :return: List of profile update objects
         :rtype: list
         """
-        
+
         if results is None:
             results = []
-            
+
         params = {
             "profileId": {public_id or urn_id},
             "q": "memberShareFeed",
@@ -804,7 +798,7 @@ class Linkedin(object):
             "start": len(results),
         }
 
-        res = self._fetch(f"/feed/updates", params=params)
+        res = self._fetch("/feed/updates", params=params)
 
         data = res.json()
 
@@ -834,7 +828,7 @@ class Linkedin(object):
         :return: Profile view data
         :rtype: dict
         """
-        res = self._fetch(f"/identity/wvmpCards")
+        res = self._fetch("/identity/wvmpCards")
 
         data = res.json()
 
@@ -842,9 +836,7 @@ class Linkedin(object):
             "com.linkedin.voyager.identity.me.wvmpOverview.WvmpViewersCard"
         ]["insightCards"][0]["value"][
             "com.linkedin.voyager.identity.me.wvmpOverview.WvmpSummaryInsightCard"
-        ][
-            "numViews"
-        ]
+        ]["numViews"]
 
     def get_school(self, public_id):
         """Fetch data about a given LinkedIn school.
@@ -888,7 +880,7 @@ class Linkedin(object):
             "universalName": public_id,
         }
 
-        res = self._fetch(f"/organization/companies", params=params)
+        res = self._fetch("/organization/companies", params=params)
 
         data = res.json()
 
@@ -934,7 +926,7 @@ class Linkedin(object):
         """
         params = {"keyVersion": "LEGACY_INBOX"}
 
-        res = self._fetch(f"/messaging/conversations", params=params)
+        res = self._fetch("/messaging/conversations", params=params)
 
         return res.json()
 
@@ -1001,7 +993,7 @@ class Linkedin(object):
                 "conversationCreate": message_event,
             }
             res = self._post(
-                f"/messaging/conversations",
+                "/messaging/conversations",
                 params=params,
                 data=json.dumps(payload),
             )
@@ -1033,7 +1025,7 @@ class Linkedin(object):
         """
         me_profile = self.client.metadata.get("me")
         if not self.client.metadata.get("me") or not use_cache:
-            res = self._fetch(f"/me")
+            res = self._fetch("/me")
             me_profile = res.json()
             # cache profile
             self.client.metadata["me"] = me_profile
@@ -1068,7 +1060,6 @@ class Linkedin(object):
         response_payload = res.json()
         return [element["invitation"] for element in response_payload["elements"]]
 
-
     def get_sent_invitations(self, start=0, limit=3):
         """Fetch sent connection invitations for the currently logged in user.
 
@@ -1080,11 +1071,11 @@ class Linkedin(object):
         :return: List of invitation objects
         :rtype: list
         """
-        
+
         params = {
             "start": start,
             "count": limit,
-            "invitationType" : "CONNECTION",
+            "invitationType": "CONNECTION",
             "q": "invitationType",
         }
 
@@ -1098,7 +1089,7 @@ class Linkedin(object):
 
         response_payload = res.json()
         return [element["invitation"] for element in response_payload["elements"]]
-    
+
     def get_self_connections(self, start=0, limit=10):
         """Fetch sent connection invitations for the currently logged in user.
 
@@ -1110,15 +1101,15 @@ class Linkedin(object):
         :return: List of connectedMemberResolutionResult objects
         :rtype: list
         """
-        
+
         params = {
             "start": start,
             "count": limit,
             "q": "search",
-            "decorationId":"com.linkedin.voyager.dash.deco.web.mynetwork.ConnectionListWithProfile-16",
-            "sortType":"RECENTLY_ADDED"
+            "decorationId": "com.linkedin.voyager.dash.deco.web.mynetwork.ConnectionListWithProfile-16",
+            "sortType": "RECENTLY_ADDED",
         }
-        
+
         res = self._fetch(
             "/relationships/dash/connections",
             params=params,
@@ -1128,8 +1119,11 @@ class Linkedin(object):
             return []
 
         response_payload = res.json()
-        return [element["connectedMemberResolutionResult"] for element in response_payload["elements"]]
-    
+        return [
+            element["connectedMemberResolutionResult"]
+            for element in response_payload["elements"]
+        ]
+
     def reply_invitation(
         self, invitation_entity_urn, invitation_shared_secret, action="accept"
     ):
@@ -1163,81 +1157,63 @@ class Linkedin(object):
 
         return res.status_code == 200
 
-
-    def withdraw_invitation(
-        self, invitation_entity_urn, invitation_shared_secret, 
-    ):
-        """Withdraw connection invitation
-
-        :param invitation_entity_urn: URN ID of the invitation
+    def withdraw_sent_invitation(self, invitationUrn):
+        """
+        Withdraw a connect request sent
+        :param invitationUrn: InvitationUrn Example: 6775007461846982656
         :type invitation_entity_urn: str
-        :param invitation_shared_secret: Shared secret of invitation
-        :type invitation_shared_secret: str
 
-        :return: Success state. True if successful
+        :return: Error state. True if error occurred
         :rtype: boolean
         """
-        invitation_id = get_id_from_urn(invitation_entity_urn)
-        params = {"action": "inviterClosingInvitation"}
         payload = json.dumps(
             {
-                "invitationId": invitation_id,
-                "inviterActionType": "WITHDRAW",
-              "inviteActionData": [
-                {
-                  "invitationId": "urn:li:invitation:6148971681877606400"
-                }
-              ],
-                "invitationSharedSecret": invitation_shared_secret,
-                "isGenericInvitation": False,
-            }
-        )
-
-        res = self._post(
-            f"{self.client.API_BASE_URL}/relationships/invitations/{invitation_id}",
-            params=params,
-            data=payload,
-        )
-        print(res.text)
-        return res.status_code == 200
-
-
-    def withdraw_invitation_lower(
-        self, invitation_entity_urn, invitation_shared_secret, 
-    ):
-        """Withdraw connection invitation
-
-        :param invitation_entity_urn: URN ID of the invitation
-        :type invitation_entity_urn: str
-        :param invitation_shared_secret: Shared secret of invitation
-        :type invitation_shared_secret: str
-
-        :return: Success state. True if successful
-        :rtype: boolean
-        """
-        invitation_id = get_id_from_urn(invitation_entity_urn)
-        params = {"action": "withdraw"}
-        payload = json.dumps(
-            {
-                "invitationId": invitation_id,
-                "inviterActionType": "WITHDRAW",
-                  "inviteActionData": [
+                "inviteActionType": "ACTOR_WITHDRAW",
+                "inviteActionData": [
                     {
-                      "invitationId": "urn:li:invitation:6148971681877606400"
+                        "entityUrn": f"urn:li:fs_relInvitation:{invitationUrn}",
+                        "genericInvitation": False,
+                        "genericInvitationType": "CONNECTION",
                     }
-                  ],
-                "invitationSharedSecret": invitation_shared_secret,
-                "isGenericInvitation": False,
+                ],
             }
         )
-
         res = self._post(
-            f"{self.client.API_BASE_URL}/relationships/invitations/{invitation_id}",
-            params=params,
+            "/relationships/invitations?action=closeInvitations",
+            headers={"accept": "application/vnd.linkedin.normalized+json+2.1"},
             data=payload,
         )
-        print(res.text)
-        return res.status_code == 200
+        return res.status_code != 200
+
+    def get_pending_sent_invitation_count(self):
+        """
+        :return: count of pending send invitations
+        :rtype: int
+        """
+        res = self._fetch(
+            "/relationships/invitationsSummaryV2?types=List(SENT_INVITATION_COUNT)"
+        )
+        data = res.json()
+        return data["numTotalSentInvitations"]
+
+    def get_pending_sent_invitations(self, start, count):
+        """
+        Returns URIs of all 'count' number of invitations from 'start'+1th entry
+        Eg: If start = 0, gets most recently sent 'count' number of invitations
+        """
+        res = self._fetch(
+            f"/relationships/sentInvitationViewsV2?count={count}&invitationType=CONNECTION&q=invitationType&start={start}"
+        )
+        data = res.json()["elements"]
+        pending_invitation_uris = [p["entityUrn"].split(":")[-1] for p in data]
+        ## Each of these URIs can be passed to withdraw_sent_invitation to withdraw request
+        return pending_invitation_uris
+
+    def withdraw_last_fifty_invitations(self):
+        total = self.get_pending_sent_invitation_count()
+        ppl = self.get_pending_sent_invitations(total - 50, 100)
+        for p in ppl:
+            self.withdraw_sent_invitation(p)
 
     def add_connection(self, profile_public_id, message="", profile_urn=None):
         """Add a given profile id as a connection.
@@ -1505,7 +1481,6 @@ class Linkedin(object):
         l_urns = []
 
         while True:
-
             # when we're close to the limit, only fetch what we need to
             if limit > -1 and limit - len(l_urns) < count:
                 count = limit - len(l_urns)
@@ -1515,7 +1490,7 @@ class Linkedin(object):
                 "start": len(l_urns) + offset,
             }
             res = self._fetch(
-                f"/feed/updatesV2",
+                "/feed/updatesV2",
                 params=params,
                 headers={"accept": "application/vnd.linkedin.normalized+json+2.1"},
             )
