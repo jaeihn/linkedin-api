@@ -1150,7 +1150,6 @@ class Linkedin(object):
         payload = json.dumps(
             {
                 "invitationId": invitation_id,
-                "invitation
                 "invitationSharedSecret": invitation_shared_secret,
                 "isGenericInvitation": False,
             }
